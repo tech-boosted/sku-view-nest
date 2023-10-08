@@ -1,19 +1,32 @@
 import { Injectable } from '@nestjs/common';
-import { User } from 'src/interfaces/user';
-
+import { getEntityManager } from '@typedorm/core';
+import { User } from 'src/entity';
 @Injectable()
 export class UserService {
-  private readonly users: User[] = [
-    {
-      name: 'Shahbaz',
-    },
-  ];
+  create(userBody: User) {
+    const new_user = new User();
+    new_user.firstname = userBody.firstname;
+    new_user.lastname = userBody.lastname;
+    new_user.email = userBody.email;
+    new_user.phone_number = userBody.phone_number;
+    new_user.company = userBody.company;
+    new_user.password = userBody.password;
 
-  create(newUser: User) {
-    this.users.push(newUser);
+    const entityManger = getEntityManager();
+
+    return entityManger.create(new_user);
   }
 
-  findAll(): User[] {
-    return this.users;
-  }
+  // findByEmail(reqBody) {
+  //   const entityManger = getEntityManager();
+  //   return entityManger.find(
+  //     User,
+  //     {
+  //       email: reqBody.email,
+  //     },
+  //     {
+  //       queryIndex: 'EMAIL',
+  //     },
+  //   );
+  // }
 }

@@ -12,21 +12,27 @@ export class UserService {
     new_user.company = userBody.company;
     new_user.password = userBody.password;
 
-    const entityManger = getEntityManager();
+    const entityManager = getEntityManager();
 
-    return entityManger.create(new_user);
+    return entityManager.create(new_user);
   }
 
-  // findByEmail(reqBody) {
-  //   const entityManger = getEntityManager();
-  //   return entityManger.find(
-  //     User,
-  //     {
-  //       email: reqBody.email,
-  //     },
-  //     {
-  //       queryIndex: 'EMAIL',
-  //     },
-  //   );
-  // }
+  findByEmail(email: string) {
+    const entityManager = getEntityManager();
+    return entityManager.findOne(User, { email: email });
+  }
+
+  findByUserId(user_id: string) {
+    const entityManager = getEntityManager();
+    return entityManager.find(
+      User,
+      { user_id: user_id },
+      {
+        queryIndex: 'GSI1',
+        // keyCondition: {
+        //   EQ: user_id,
+        // },
+      },
+    );
+  }
 }

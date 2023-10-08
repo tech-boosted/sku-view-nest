@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { createConnection } from '@typedorm/core';
 import { acrosTable } from './db/acros.db';
-import { User } from 'src/entity';
+import { Channel, User } from 'src/entity';
 import 'reflect-metadata';
 import { DocumentClientV3 } from '@typedorm/document-client';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -14,7 +14,7 @@ async function bootstrap() {
 
   createConnection({
     table: acrosTable,
-    entities: [User],
+    entities: [User, Channel],
     documentClient: documentClient,
   });
   await app.listen(3000);

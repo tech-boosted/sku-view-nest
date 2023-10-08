@@ -9,14 +9,14 @@ import {
 @Entity({
   name: 'user',
   primaryKey: {
-    partitionKey: 'USER#{{user_id}}',
-    sortKey: 'PHONE_NUMBER#{{phone_number}}',
+    partitionKey: '{{email}}',
+    sortKey: '{{email}}',
   },
   indexes: {
     GSI1: {
       type: INDEX_TYPE.GSI,
-      partitionKey: 'EMAIL#{{email}}',
-      sortKey: 'EMAIL#{{email}}',
+      partitionKey: '{{user_id}}',
+      sortKey: '{{user_id}}',
     },
   },
 })

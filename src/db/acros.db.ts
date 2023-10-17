@@ -5,6 +5,10 @@ export const acrosTable = new Table({
   partitionKey: 'PK',
   sortKey: 'SK',
   indexes: {
+    LSI1: {
+      type: INDEX_TYPE.LSI,
+      sortKey: 'LSI1SK',
+    },
     GSI1: {
       partitionKey: 'GSI1PK',
       sortKey: 'GSI1SK',

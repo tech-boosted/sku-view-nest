@@ -1,7 +1,6 @@
 import { Attribute, Entity, INDEX_TYPE } from '@typedorm/common';
 
 export interface SkuData {
-  sku: string;
   impressions: string;
   clicks: string;
   spend: string;
@@ -12,18 +11,23 @@ export interface SkuData {
 @Entity({
   name: 'sku',
   primaryKey: {
-    partitionKey: 'SKU#{{user_id}}#{{channel_name}}',
-    sortKey: '{{date}}#{{sku}}',
+    partitionKey: 'SKU#{{user_id}}',
+    sortKey: '{{channel_name}}#{{sku}}#{{date}}',
   },
   indexes: {
-    GSI1: {
-      type: INDEX_TYPE.GSI,
-      partitionKey: '{{sku}}',
-      sortKey: '{{date}}',
-    },
     LSI1: {
       type: INDEX_TYPE.LSI,
-      sortKey: '{{sku}}',
+      sortKey: '{{date}}',
+    },
+    GSI1: {
+      type: INDEX_TYPE.GSI,
+      partitionKey: '{{user_id}}#{{sku}}',
+      sortKey: '{{date}}',
+    },
+    GSI2: {
+      type: INDEX_TYPE.GSI,
+      partitionKey: '{{user_id}}#{{channel_name}}',
+      sortKey: '{{date}}',
     },
   },
 })

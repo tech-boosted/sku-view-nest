@@ -6,16 +6,20 @@ export class SkuController {
   constructor(private skuService: SkuService) {}
 
   @Post()
-  async create(@Body() createSkuDTO: any) {
+  async create() {
     return this.skuService.create(
-      createSkuDTO,
-      'shahbaz@boosted.in',
+      '54c739e2-a276-4aec-a92e-75e05a8995ab',
       'amazon_us',
     );
   }
 
-  @Get('sku')
-  async findOne(@Body() findByDateDTO: { date: string }) {
-    return this.skuService.findByDate(findByDateDTO.date);
+  @Get()
+  async findOne(
+    @Body() findByDateDTO: { start_date: string; end_date: string },
+  ) {
+    return this.skuService.findByDate(
+      findByDateDTO.start_date,
+      findByDateDTO.end_date,
+    );
   }
 }

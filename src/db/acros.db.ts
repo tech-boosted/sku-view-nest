@@ -14,5 +14,10 @@ export const acrosTable = new Table({
       sortKey: 'GSI1SK',
       type: INDEX_TYPE.GSI,
     },
+    GSI2: {
+      partitionKey: 'GSI2PK',
+      sortKey: 'GSI2SK',
+      type: INDEX_TYPE.GSI,
+    },
   },
 });

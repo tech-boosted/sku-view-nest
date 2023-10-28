@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { createConnection } from '@typedorm/core';
-import { acrosTable } from './db/acros.db';
+import { acrosTable } from './config';
 import { Channel, Sku, User } from 'src/entity';
 import 'reflect-metadata';
 import { DocumentClientV3 } from '@typedorm/document-client';

@@ -1,6 +1,6 @@
 import { WriteBatch, getBatchManager } from '@typedorm/core';
 import { Sku } from 'src/entity';
-import { AmazonFile } from 'src/sku/sku.service';
+import { AmazonFile } from 'src/modules/sku/sku.service';
 
 const batchSize = 25;
 const concurrentRequests = 40;

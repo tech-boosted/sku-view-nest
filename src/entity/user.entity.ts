@@ -16,12 +16,12 @@ export class User {
   @AutoGenerateAttribute({
     strategy: AUTO_GENERATE_ATTRIBUTE_STRATEGY.UUID4,
   })
-  user_id: string;
+  user_id?: string;
 
   @AutoGenerateAttribute({
     strategy: AUTO_GENERATE_ATTRIBUTE_STRATEGY.ISO_DATE,
   })
-  created_on: string;
+  created_on?: string;
 
   @Attribute()
   firstname: string;

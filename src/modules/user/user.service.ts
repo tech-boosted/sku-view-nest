@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { getEntityManager } from '@typedorm/core';
 import { User } from 'src/entity';
+
 @Injectable()
 export class UserService {
   create(userBody: User) {
@@ -28,7 +29,7 @@ export class UserService {
       User,
       { user_id: user_id },
       {
-        queryIndex: 'GSI1',
+        // queryIndex: 'GSI1',
         // keyCondition: {
         //   EQ: user_id,
         // },

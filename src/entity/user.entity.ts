@@ -8,7 +8,7 @@ import {
 @Entity({
   name: 'user',
   primaryKey: {
-    partitionKey: '{{email}}',
+    partitionKey: 'USER#{{email}}',
     sortKey: '{{email}}',
   },
 })

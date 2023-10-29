@@ -3,7 +3,7 @@ import { Attribute, Entity, INDEX_TYPE } from '@typedorm/common';
 @Entity({
   name: 'channel',
   primaryKey: {
-    partitionKey: '{{user_id}}',
+    partitionKey: 'CHANNEL#{{user_id}}',
     sortKey: '{{channel_name}}',
   },
   indexes: {

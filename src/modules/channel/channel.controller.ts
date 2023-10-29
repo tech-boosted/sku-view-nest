@@ -1,27 +1,34 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ChannelService } from './channel.service';
+import { AuthUser } from 'src/helpers';
+import { CreateChannelDTO } from './channel.dto';
 
-@Controller('channel')
+@Controller()
 export class ChannelController {
   constructor(private channelService: ChannelService) {}
 
-  @Post()
+  @Post('channel/add')
   async create(
+    @AuthUser() user_id,
     @Body()
-    createChannelDTO: {
-      channel_name: string;
-      profile_id: string;
-      profile_name: string;
-      token: string;
-      token_type: string;
-      user_id: string;
-    },
+    createChannelDTO: CreateChannelDTO,
   ) {
-    return this.channelService.create(createChannelDTO);
+    return this.channelService.create(createChannelDTO, user_id);
   }
 
-  @Get()
-  async getAllTokensByUserId(@Body() getAllTokensDTO: { user_id: string }) {
-    return this.channelService.getAllTokensByUserId(getAllTokensDTO.user_id);
+  @Get('channels')
+  async listChannels(@AuthUser() user_id) {
+    const results = await this.channelService.getAll(user_id);
+    const keysToRemove = ['token_type', 'token'];
+
+    if (results?.items?.length > 0) {
+      return results.items.map((item) => {
+        for (const keyToRemove of keysToRemove) {
+          delete item[keyToRemove];
+        }
+        return item;
+      });
+    }
+    return [];
   }
 }

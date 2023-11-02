@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import {
+  AmazonController,
+  AmazonModule,
+  AmazonService,
   ChannelController,
   ChannelModule,
   ChannelService,
@@ -12,8 +15,13 @@ import {
 } from './modules';
 
 @Module({
-  imports: [UserModule, ChannelModule, SkuModule],
-  controllers: [AppController, ChannelController, SkuController],
-  providers: [AppService, ChannelService, SkuService],
+  imports: [UserModule, ChannelModule, SkuModule, AmazonModule],
+  controllers: [
+    AppController,
+    ChannelController,
+    SkuController,
+    AmazonController,
+  ],
+  providers: [AppService, ChannelService, SkuService, AmazonService],
 })
 export class AppModule {}

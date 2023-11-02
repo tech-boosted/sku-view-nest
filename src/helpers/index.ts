@@ -1,2 +1,3 @@
 export * from './amazon';
-export * from './auth.user.decorator';
+export * from './decorators';
+export * from './validate.token';

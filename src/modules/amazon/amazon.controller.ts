@@ -1,15 +1,18 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Headers,
-  InternalServerErrorException,
   Query,
   Res,
 } from '@nestjs/common';
 import {
   AuthUser,
   amazon_access_token_base_urls,
-  amazon_base_urls,
+  amazon_ads_base_urls,
+  amazon_auth_base_urls,
+  amazon_country_code,
+  getProfilesFromAmazon,
   getTokensFromAmazon,
   validateToken,
 } from 'src/helpers';
@@ -40,13 +43,13 @@ export class AmazonController {
   ) {
     const token = headers?.authorization?.replace('Bearer ', '');
     if (!token) {
-      return new InternalServerErrorException({
+      return new BadRequestException({
         message: 'Token missing',
       });
     }
 
     if (!query.marketplace) {
-      return new InternalServerErrorException({
+      return new BadRequestException({
         message: 'Marketplace missing',
       });
     }
@@ -81,7 +84,7 @@ export class AmazonController {
     }
 
     const loginWithAmazonUrl =
-      amazon_base_urls[query.marketplace] +
+      amazon_auth_base_urls[query.marketplace] +
       '?client_id=' +
       this.AMAZON_CLIENT_ID +
       '&scope=advertising::campaign_management&response_type=code&state=[' +
@@ -140,21 +143,35 @@ export class AmazonController {
       client_id: this.AMAZON_CLIENT_ID,
       client_secret: this.AMAZON_CLIENT_SECRECT,
     });
-    const access_token_url = amazon_access_token_base_urls[marketplace];
+    const url = amazon_access_token_base_urls[marketplace];
     const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
 
-    const result = await getTokensFromAmazon(
-      data,
-      access_token_url,
-      headers,
-      this.channelService,
-      user_id,
-      marketplace,
-    );
+    const result = await getTokensFromAmazon(url, data, headers);
 
     console.log('result: ', result);
 
     if (result?.status) {
+      // If only one refresh and one access token is required for all the amazon marketplaces (handle later)
+      // If there are different access tokens and refresh tokens for all the amazon marketplaces (handle later)
+
+      await this.channelService.create({
+        user_id: user_id,
+        channel_name: marketplace,
+        token: result?.access_token,
+        token_type: 'access_token',
+        profile_id: '',
+        profile_name: '',
+      });
+      await this.channelService.create({
+        user_id: user_id,
+        channel_name: marketplace,
+        token: result?.refresh_token,
+        token_type: 'refresh_token',
+        profile_id: '',
+        profile_name: '',
+      });
+
+      console.log('account linked and tokens saved');
       return response.redirect(
         String(this.CLIENT_AMAZON_SUCCESS_URL + '/' + marketplace),
       );
@@ -162,5 +179,40 @@ export class AmazonController {
     return response.redirect(
       String(this.CLIENT_AMAZON_FAIL_URL + '/' + marketplace),
     );
+  }
+
+  @Get('profiles')
+  async listProfiles(@AuthUser() user_id: string, @Query() query) {
+    if (!query.marketplace) {
+      return new BadRequestException({
+        message: 'Marketplace missing',
+      });
+    }
+
+    const channel_access_token = await this.channelService
+      .get(user_id, 'access_token', query.marketplace)
+      .then((res) => res.items[0].token);
+
+    if (!channel_access_token) {
+      throw new BadRequestException({
+        message: 'Account not linked',
+      });
+    }
+    const base_url = amazon_ads_base_urls[query.marketplace];
+    const country_code = amazon_country_code[query.marketplace];
+    const headers = {
+      'Amazon-Advertising-API-ClientId': this.AMAZON_CLIENT_ID,
+      Authorization: 'Bearer ' + channel_access_token,
+    };
+
+    const result = await getProfilesFromAmazon(base_url, headers, country_code);
+
+    if (!result.status) {
+      throw new BadRequestException({
+        message: result?.message,
+      });
+    }
+
+    return result?.message;
   }
 }

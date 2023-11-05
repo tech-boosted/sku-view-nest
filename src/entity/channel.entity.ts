@@ -1,17 +1,10 @@
-import { Attribute, Entity, INDEX_TYPE } from '@typedorm/common';
+import { Attribute, Entity } from '@typedorm/common';
 
 @Entity({
   name: 'channel',
   primaryKey: {
     partitionKey: 'CHANNEL#{{user_id}}',
-    sortKey: '{{channel_name}}',
-  },
-  indexes: {
-    GSI1: {
-      type: INDEX_TYPE.GSI,
-      partitionKey: '{{token_type}}',
-      sortKey: '{{token_type}}',
-    },
+    sortKey: '{{channel_name}}#{{token_type}}',
   },
 })
 export class Channel {

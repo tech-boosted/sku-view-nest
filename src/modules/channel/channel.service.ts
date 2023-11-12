@@ -17,7 +17,21 @@ export class ChannelService {
     return entityManger.create(new_channel);
   }
 
-  getAll(user_id: string) {
+  update(channelBody: Channel) {
+    const entityManger = getEntityManager();
+
+    return entityManger.update(
+      Channel,
+      {
+        user_id: channelBody.user_id,
+        channel_name: channelBody.channel_name,
+        token_type: channelBody.token_type,
+      },
+      channelBody,
+    );
+  }
+
+  getAll({ user_id }: { user_id: string }) {
     const entityManger = getEntityManager();
 
     return entityManger.find(Channel, {
@@ -25,10 +39,18 @@ export class ChannelService {
     });
   }
 
-  get(user_id: string, token_type: string, channel_name: string) {
+  get({
+    user_id,
+    token_type,
+    channel_name,
+  }: {
+    user_id: string;
+    token_type: string;
+    channel_name: string;
+  }) {
     const entityManger = getEntityManager();
 
-    return entityManger.find(Channel, {
+    return entityManger.findOne(Channel, {
       user_id,
       token_type,
       channel_name,

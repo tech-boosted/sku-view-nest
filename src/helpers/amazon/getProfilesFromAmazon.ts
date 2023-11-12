@@ -1,13 +1,21 @@
 import axios from 'axios';
+import { amazon_ads_base_urls, amazon_country_code } from './constants';
 
 export const getProfilesFromAmazon = async (
-  base_url: string,
-  headers: any,
-  country_code: string,
+  marketplace: string,
+  channel_access_token: string,
+  AMAZON_CLIENT_ID: string,
 ): Promise<{
   status: boolean;
-  message: string | any[];
+  message: string | number | any[];
 }> => {
+  const base_url = amazon_ads_base_urls[marketplace];
+  const country_code = amazon_country_code[marketplace];
+  const headers = {
+    'Amazon-Advertising-API-ClientId': AMAZON_CLIENT_ID,
+    Authorization: 'Bearer ' + channel_access_token,
+  };
+
   return axios
     .get(base_url + '/v2/profiles', { headers: headers })
     .then((res) => {
@@ -25,7 +33,7 @@ export const getProfilesFromAmazon = async (
       };
     })
     .catch((err) => {
-      console.log(err?.response);
+      console.log(err?.response?.data);
 
       if (err.response.status == 401) {
         // access_token expired

@@ -24,6 +24,10 @@ export class ChannelController {
 
   @Get('channel/one')
   async getChannelDetails(@AuthUser() user_id) {
-    return this.channelService.get(user_id, 'access_token', 'amazon_us');
+    return this.channelService.get({
+      user_id,
+      token_type: 'access_token',
+      channel_name: 'amazon_us',
+    });
   }
 }

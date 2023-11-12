@@ -8,18 +8,14 @@ import {
 } from '@nestjs/common';
 import {
   AuthUser,
-  amazon_access_token_base_urls,
-  amazon_ads_base_urls,
   amazon_auth_base_urls,
-  amazon_country_code,
   getProfilesFromAmazon,
   getTokensFromAmazon,
+  regenerateToken,
   validateToken,
 } from 'src/helpers';
 import { AmazonService } from './amazon.service';
 import { ChannelService } from '../channel';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const qs = require('qs');
 
 @Controller('amazon')
 export class AmazonController {
@@ -54,31 +50,26 @@ export class AmazonController {
       });
     }
 
-    const grantCodeSaved = await this.channelService.get(
+    const grantCodeSaved = await this.channelService.get({
       user_id,
-      'grant_code',
-      query.marketplace,
-    );
+      token_type: 'grant_code',
+      channel_name: query.marketplace,
+    });
 
     // Check if auth grant saved
-    if (grantCodeSaved?.items?.length > 0) {
+    if (grantCodeSaved?.channel_name) {
       // Check if access and refresh token already fetched
-      const accessToken = await this.channelService.get(
+      const accessToken = await this.channelService.get({
         user_id,
-        'access_token',
-        query.marketplace,
-      );
-      const refreshToken = await this.channelService.get(
+        token_type: 'access_token',
+        channel_name: query.marketplace,
+      });
+      const refreshToken = await this.channelService.get({
         user_id,
-        'refresh_token',
-        query.marketplace,
-      );
-      console.log('accessToken: ', accessToken);
-      console.log('refreshToken: ', refreshToken);
-      if (
-        accessToken?.items?.length !== 0 &&
-        refreshToken?.items?.length !== 0
-      ) {
+        token_type: 'refresh_token',
+        channel_name: query.marketplace,
+      });
+      if (accessToken && refreshToken) {
         return { message: 'Already linked' };
       }
     }
@@ -136,17 +127,13 @@ export class AmazonController {
       profile_name: '',
     });
 
-    const data = qs.stringify({
-      grant_type: 'authorization_code',
-      code: code,
-      redirect_uri: this.AMAZON_REDIRECT_URL,
-      client_id: this.AMAZON_CLIENT_ID,
-      client_secret: this.AMAZON_CLIENT_SECRECT,
-    });
-    const url = amazon_access_token_base_urls[marketplace];
-    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-
-    const result = await getTokensFromAmazon(url, data, headers);
+    const result = await getTokensFromAmazon(
+      this.AMAZON_REDIRECT_URL,
+      this.AMAZON_CLIENT_ID,
+      this.AMAZON_CLIENT_SECRECT,
+      code,
+      marketplace,
+    );
 
     console.log('result: ', result);
 
@@ -190,24 +177,69 @@ export class AmazonController {
     }
 
     const channel_access_token = await this.channelService
-      .get(user_id, 'access_token', query.marketplace)
-      .then((res) => res.items[0].token);
+      .get({
+        user_id,
+        token_type: 'access_token',
+        channel_name: query.marketplace,
+      })
+      .then((res) => res?.token);
 
     if (!channel_access_token) {
       throw new BadRequestException({
         message: 'Account not linked',
       });
     }
-    const base_url = amazon_ads_base_urls[query.marketplace];
-    const country_code = amazon_country_code[query.marketplace];
-    const headers = {
-      'Amazon-Advertising-API-ClientId': this.AMAZON_CLIENT_ID,
-      Authorization: 'Bearer ' + channel_access_token,
-    };
 
-    const result = await getProfilesFromAmazon(base_url, headers, country_code);
+    const result = await getProfilesFromAmazon(
+      query?.marketplace,
+      channel_access_token,
+      this.AMAZON_CLIENT_ID,
+    );
 
     if (!result.status) {
+      if (result.message === 401) {
+        const channel_info = await this.channelService.get({
+          user_id,
+          token_type: 'refresh_token',
+          channel_name: query.marketplace,
+        });
+
+        const channel_refresh_token = channel_info?.token;
+
+        const regenerateTokenResult = await regenerateToken({
+          AMAZON_CLIENT_ID: this.AMAZON_CLIENT_ID,
+          AMAZON_CLIENT_SECRECT: this.AMAZON_CLIENT_SECRECT,
+          marketplace: query.marketplace,
+          refreshToken: channel_refresh_token,
+        });
+
+        if (regenerateTokenResult?.status) {
+          const new_access_token = regenerateTokenResult?.message;
+          await this.channelService.update({
+            user_id,
+            token: new_access_token,
+            token_type: 'access_token',
+            channel_name: query.marketplace,
+            profile_id: channel_info?.profile_id,
+            profile_name: channel_info?.profile_name,
+          });
+
+          const profiles_result = await getProfilesFromAmazon(
+            query?.marketplace,
+            new_access_token,
+            this.AMAZON_CLIENT_ID,
+          );
+
+          if (profiles_result?.status) {
+            return profiles_result?.message;
+          }
+
+          throw new BadRequestException({
+            message: profiles_result?.message,
+          });
+        }
+      }
+
       throw new BadRequestException({
         message: result?.message,
       });

@@ -2,6 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { getEntityManager } from '@typedorm/core';
 import { Channel } from 'src/entity';
 
+interface ChannelGetAllProps {
+  user_id: string;
+}
+interface ChannelGetAllByChannelProps {
+  user_id: string;
+  channel_name: string;
+}
+interface ChannelGetOneProps {
+  user_id: string;
+  token_type: string;
+  channel_name: string;
+}
+
 @Injectable()
 export class ChannelService {
   create(channelBody: Channel) {
@@ -31,7 +44,7 @@ export class ChannelService {
     );
   }
 
-  getAll({ user_id }: { user_id: string }) {
+  getAll({ user_id }: ChannelGetAllProps) {
     const entityManger = getEntityManager();
 
     return entityManger.find(Channel, {
@@ -39,15 +52,23 @@ export class ChannelService {
     });
   }
 
-  get({
-    user_id,
-    token_type,
-    channel_name,
-  }: {
-    user_id: string;
-    token_type: string;
-    channel_name: string;
-  }) {
+  getAllByChannel({ user_id, channel_name }: ChannelGetAllByChannelProps) {
+    const entityManger = getEntityManager();
+
+    return entityManger.find(
+      Channel,
+      {
+        user_id,
+      },
+      {
+        keyCondition: {
+          BEGINS_WITH: channel_name,
+        },
+      },
+    );
+  }
+
+  getOne({ user_id, token_type, channel_name }: ChannelGetOneProps) {
     const entityManger = getEntityManager();
 
     return entityManger.findOne(Channel, {

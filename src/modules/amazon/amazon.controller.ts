@@ -1,8 +1,10 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Headers,
+  Post,
   Query,
   Res,
 } from '@nestjs/common';
@@ -17,6 +19,10 @@ import {
 import { AmazonService } from './amazon.service';
 import { ChannelService } from '../channel';
 
+interface AmazonSetProfileRequestBody {
+  profile_id: string;
+  profile_name: string;
+}
 @Controller('amazon')
 export class AmazonController {
   AMAZON_CLIENT_ID = process.env.AMAZON_CLIENT_ID;
@@ -50,7 +56,7 @@ export class AmazonController {
       });
     }
 
-    const grantCodeSaved = await this.channelService.get({
+    const grantCodeSaved = await this.channelService.getOne({
       user_id,
       token_type: 'grant_code',
       channel_name: query.marketplace,
@@ -59,12 +65,12 @@ export class AmazonController {
     // Check if auth grant saved
     if (grantCodeSaved?.channel_name) {
       // Check if access and refresh token already fetched
-      const accessToken = await this.channelService.get({
+      const accessToken = await this.channelService.getOne({
         user_id,
         token_type: 'access_token',
         channel_name: query.marketplace,
       });
-      const refreshToken = await this.channelService.get({
+      const refreshToken = await this.channelService.getOne({
         user_id,
         token_type: 'refresh_token',
         channel_name: query.marketplace,
@@ -168,7 +174,7 @@ export class AmazonController {
     );
   }
 
-  @Get('profiles')
+  @Get('/profiles')
   async listProfiles(@AuthUser() user_id: string, @Query() query) {
     if (!query.marketplace) {
       return new BadRequestException({
@@ -177,7 +183,7 @@ export class AmazonController {
     }
 
     const channel_access_token = await this.channelService
-      .get({
+      .getOne({
         user_id,
         token_type: 'access_token',
         channel_name: query.marketplace,
@@ -198,7 +204,7 @@ export class AmazonController {
 
     if (!result.status) {
       if (result.message === 401) {
-        const channel_info = await this.channelService.get({
+        const channel_info = await this.channelService.getOne({
           user_id,
           token_type: 'refresh_token',
           channel_name: query.marketplace,
@@ -246,5 +252,57 @@ export class AmazonController {
     }
 
     return result?.message;
+  }
+
+  @Post('/setProfile')
+  async setProfile(
+    @AuthUser() user_id: string,
+    @Query() query: { marketplace: string },
+    @Body() requestBody: AmazonSetProfileRequestBody,
+  ) {
+    if (
+      !requestBody?.profile_id?.length ||
+      !requestBody?.profile_name?.length ||
+      !query?.marketplace?.length
+    ) {
+      throw new BadRequestException({
+        status: false,
+        message: 'Missing parameters',
+      });
+    }
+
+    const prevRecords = await this.channelService.getAllByChannel({
+      user_id,
+      channel_name: query?.marketplace,
+    });
+
+    if (!prevRecords?.items?.length) {
+      throw new BadRequestException({
+        status: false,
+        message: 'Channel not linked',
+      });
+    }
+
+    try {
+      prevRecords?.items?.forEach(async (item) => {
+        await this.channelService.update({
+          user_id: item?.user_id,
+          channel_name: item?.channel_name,
+          token: item?.token,
+          token_type: item?.token_type,
+          profile_id: requestBody?.profile_id,
+          profile_name: requestBody?.profile_name,
+        });
+      });
+      return {
+        status: true,
+        message: 'Updated',
+      };
+    } catch (err) {
+      throw new BadRequestException({
+        status: false,
+        message: err,
+      });
+    }
   }
 }

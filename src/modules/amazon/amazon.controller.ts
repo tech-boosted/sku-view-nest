@@ -18,11 +18,8 @@ import {
 } from 'src/helpers';
 import { AmazonService } from './amazon.service';
 import { ChannelService } from '../channel';
+import { AmazonSetProfileDTO } from './amazon.dto';
 
-interface AmazonSetProfileRequestBody {
-  profile_id: string;
-  profile_name: string;
-}
 @Controller('amazon')
 export class AmazonController {
   AMAZON_CLIENT_ID = process.env.AMAZON_CLIENT_ID;
@@ -258,7 +255,7 @@ export class AmazonController {
   async setProfile(
     @AuthUser() user_id: string,
     @Query() query: { marketplace: string },
-    @Body() requestBody: AmazonSetProfileRequestBody,
+    @Body() requestBody: AmazonSetProfileDTO,
   ) {
     if (
       !requestBody?.profile_id?.length ||

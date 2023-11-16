@@ -12,16 +12,26 @@ import {
   SkuModule,
   SkuService,
   UserModule,
+  GoogleModule,
+  GoogleController,
+  GoogleService,
 } from './modules';
 
 @Module({
-  imports: [UserModule, ChannelModule, SkuModule, AmazonModule],
+  imports: [UserModule, ChannelModule, SkuModule, AmazonModule, GoogleModule],
   controllers: [
     AppController,
     ChannelController,
     SkuController,
     AmazonController,
+    GoogleController,
   ],
-  providers: [AppService, ChannelService, SkuService, AmazonService],
+  providers: [
+    AppService,
+    ChannelService,
+    SkuService,
+    AmazonService,
+    GoogleService,
+  ],
 })
 export class AppModule {}

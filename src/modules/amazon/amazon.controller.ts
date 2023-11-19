@@ -10,6 +10,10 @@ import {
 } from '@nestjs/common';
 import {
   AuthUser,
+  ChannelEnum,
+  NotificationDescriptionEnum,
+  NotificationTitleEnum,
+  NotificationTypeEnum,
   amazon_auth_base_urls,
   getProfilesFromAmazon,
   getTokensFromAmazon,
@@ -19,6 +23,7 @@ import {
 import { AmazonService } from './amazon.service';
 import { ChannelService } from '../channel';
 import { AmazonSetProfileDTO } from './amazon.dto';
+import { NotificationService } from '../notification';
 
 @Controller('amazon')
 export class AmazonController {
@@ -31,6 +36,7 @@ export class AmazonController {
   constructor(
     private amazonService: AmazonService,
     private channelService: ChannelService,
+    private notificationService: NotificationService,
   ) {}
 
   @Get('/link')
@@ -38,7 +44,10 @@ export class AmazonController {
     @AuthUser() user_id: string,
     @Headers()
     headers,
-    @Query() query,
+    @Query()
+    query: {
+      marketplace: ChannelEnum;
+    },
   ) {
     const token = headers?.authorization?.replace('Bearer ', '');
     if (!token) {
@@ -88,6 +97,17 @@ export class AmazonController {
       ']&redirect_uri=' +
       this.AMAZON_REDIRECT_URL;
 
+    await this.notificationService.create({
+      title: NotificationTitleEnum.CHANNEL_CONNECTION_STARTED,
+      description:
+        NotificationDescriptionEnum.CHANNEL_CONNECTION_STARTED.replace(
+          'X',
+          ChannelEnum[query.marketplace],
+        ),
+      type: NotificationTypeEnum.CHANNEL_CONNECTION_START,
+      read: false,
+    });
+
     return { url: loginWithAmazonUrl };
   }
 
@@ -111,11 +131,31 @@ export class AmazonController {
     if (token) {
       user_id = validateToken(token);
       if (!user_id) {
+        await this.notificationService.create({
+          title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
+          description:
+            NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
+              'X',
+              ChannelEnum[marketplace],
+            ),
+          type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
+          read: false,
+        });
         return response.redirect(
           String(this.CLIENT_AMAZON_FAIL_URL + '/' + marketplace),
         );
       }
     } else {
+      await this.notificationService.create({
+        title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
+        description:
+          NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
+            'X',
+            ChannelEnum[marketplace],
+          ),
+        type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
+        read: false,
+      });
       return response.redirect(
         String(this.CLIENT_AMAZON_FAIL_URL + '/' + marketplace),
       );
@@ -162,10 +202,33 @@ export class AmazonController {
       });
 
       console.log('account linked and tokens saved');
+
+      await this.notificationService.create({
+        title: NotificationTitleEnum.CHANNEL_CONNECTION_SUCCESSFUL,
+        description:
+          NotificationDescriptionEnum.CHANNEL_CONNECTION_SUCCESSFUL.replace(
+            'X',
+            ChannelEnum[marketplace],
+          ),
+        type: NotificationTypeEnum.CHANNEL_CONNECTION_SUCCESSFUL,
+        read: false,
+      });
+
       return response.redirect(
         String(this.CLIENT_AMAZON_SUCCESS_URL + '/' + marketplace),
       );
     }
+
+    await this.notificationService.create({
+      title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
+      description:
+        NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
+          'X',
+          ChannelEnum[marketplace],
+        ),
+      type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
+      read: false,
+    });
     return response.redirect(
       String(this.CLIENT_AMAZON_FAIL_URL + '/' + marketplace),
     );

@@ -15,16 +15,27 @@ import {
   GoogleModule,
   GoogleController,
   GoogleService,
+  NotificationModule,
+  NotificationService,
+  NotificationController,
 } from './modules';
 
 @Module({
-  imports: [UserModule, ChannelModule, SkuModule, AmazonModule, GoogleModule],
+  imports: [
+    UserModule,
+    ChannelModule,
+    SkuModule,
+    AmazonModule,
+    GoogleModule,
+    NotificationModule,
+  ],
   controllers: [
     AppController,
     ChannelController,
     SkuController,
     AmazonController,
     GoogleController,
+    NotificationController,
   ],
   providers: [
     AppService,
@@ -32,6 +43,7 @@ import {
     SkuService,
     AmazonService,
     GoogleService,
+    NotificationService,
   ],
 })
 export class AppModule {}

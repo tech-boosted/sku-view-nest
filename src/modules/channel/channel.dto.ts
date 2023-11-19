@@ -16,7 +16,3 @@ export class CreateChannelDTO {
   @IsNotEmpty()
   profile_name: string;
 }
-
-export enum ChannelEnum {
-  AMAZON_US = 'AmazonUS',
-}

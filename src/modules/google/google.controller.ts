@@ -10,11 +10,16 @@ import { GoogleService } from './google.service';
 import { ChannelService } from '../channel';
 import {
   AuthUser,
+  ChannelEnum,
+  NotificationDescriptionEnum,
+  NotificationTitleEnum,
+  NotificationTypeEnum,
   google_auth_url,
   google_scope_url,
   validateToken,
 } from 'src/helpers';
 import { google } from 'googleapis';
+import { NotificationService } from '../notification';
 
 @Controller('google')
 export class GoogleController {
@@ -33,6 +38,7 @@ export class GoogleController {
   constructor(
     private googleService: GoogleService,
     private channelService: ChannelService,
+    private notificationService: NotificationService,
   ) {}
 
   //Generate Login with Amazon URL
@@ -65,6 +71,18 @@ export class GoogleController {
       return { message: 'Already linked' };
     }
 
+    await this.notificationService.create({
+      user_id: user_id,
+      title: NotificationTitleEnum.CHANNEL_CONNECTION_STARTED,
+      description:
+        NotificationDescriptionEnum.CHANNEL_CONNECTION_STARTED.replace(
+          'X',
+          ChannelEnum.GOOGLE,
+        ),
+      type: NotificationTypeEnum.CHANNEL_CONNECTION_START,
+      read: false,
+    });
+
     const loginWithGoogleUrl =
       google_auth_url +
       '?scope=' +
@@ -91,21 +109,58 @@ export class GoogleController {
     console.log('state: ', state);
     console.log('error: ', error);
 
-    if (error) {
-      console.log('error: ', error);
-      return response.redirect(String(this.CLIENT_GOOGLE_FAIL_URL));
-    }
-
     const token = state;
 
     let user_id: string;
     if (token) {
       user_id = validateToken(token);
-      console.log('user_id: ', user_id);
+
       if (!user_id) {
+        await this.notificationService.create({
+          user_id: user_id,
+          title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
+          description:
+            NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
+              'X',
+              ChannelEnum.GOOGLE,
+            ) + ' invalid user_id',
+          type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
+          read: false,
+        });
         return response.redirect(String(this.CLIENT_GOOGLE_FAIL_URL));
       }
     } else {
+      await this.notificationService.create({
+        user_id: user_id,
+        title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
+        description:
+          NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
+            'X',
+            ChannelEnum.GOOGLE,
+          ) + ' token not found',
+        type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
+        read: false,
+      });
+      return response.redirect(String(this.CLIENT_GOOGLE_FAIL_URL));
+    }
+
+    if (error) {
+      console.log('error: ', error);
+
+      await this.notificationService.create({
+        user_id: user_id,
+        title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
+        description:
+          NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
+            'X',
+            ChannelEnum.GOOGLE,
+          ) +
+          ' ' +
+          error,
+        type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
+        read: false,
+      });
+
       return response.redirect(String(this.CLIENT_GOOGLE_FAIL_URL));
     }
 
@@ -156,8 +211,34 @@ export class GoogleController {
       });
 
       console.log('account linked and tokens saved');
+
+      await this.notificationService.create({
+        user_id: user_id,
+        title: NotificationTitleEnum.CHANNEL_CONNECTION_SUCCESSFUL,
+        description:
+          NotificationDescriptionEnum.CHANNEL_CONNECTION_SUCCESSFUL.replace(
+            'X',
+            ChannelEnum.GOOGLE,
+          ),
+        type: NotificationTypeEnum.CHANNEL_CONNECTION_SUCCESSFUL,
+        read: false,
+      });
+
       return response.redirect(String(this.CLIENT_GOOGLE_SUCCESS_URL));
     }
+
+    await this.notificationService.create({
+      user_id: user_id,
+      title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
+      description:
+        NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
+          'X',
+          ChannelEnum.GOOGLE,
+        ),
+      type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
+      read: false,
+    });
+
     return response.redirect(String(this.CLIENT_GOOGLE_FAIL_URL));
   }
 }

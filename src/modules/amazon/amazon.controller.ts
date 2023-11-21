@@ -98,6 +98,7 @@ export class AmazonController {
       this.AMAZON_REDIRECT_URL;
 
     await this.notificationService.create({
+      user_id: user_id,
       title: NotificationTitleEnum.CHANNEL_CONNECTION_STARTED,
       description:
         NotificationDescriptionEnum.CHANNEL_CONNECTION_STARTED.replace(
@@ -132,6 +133,7 @@ export class AmazonController {
       user_id = validateToken(token);
       if (!user_id) {
         await this.notificationService.create({
+          user_id: user_id,
           title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
           description:
             NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
@@ -147,6 +149,7 @@ export class AmazonController {
       }
     } else {
       await this.notificationService.create({
+        user_id: user_id,
         title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
         description:
           NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
@@ -204,6 +207,7 @@ export class AmazonController {
       console.log('account linked and tokens saved');
 
       await this.notificationService.create({
+        user_id: user_id,
         title: NotificationTitleEnum.CHANNEL_CONNECTION_SUCCESSFUL,
         description:
           NotificationDescriptionEnum.CHANNEL_CONNECTION_SUCCESSFUL.replace(
@@ -220,6 +224,7 @@ export class AmazonController {
     }
 
     await this.notificationService.create({
+      user_id: user_id,
       title: NotificationTitleEnum.CHANNEL_CONNECTION_FAILED,
       description:
         NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(

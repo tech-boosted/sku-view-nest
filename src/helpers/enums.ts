@@ -1,5 +1,6 @@
 export enum ChannelEnum {
   AMAZON_US = 'Amazon US',
+  GOOGLE = 'Google',
 }
 
 export enum NotificationTitleEnum {

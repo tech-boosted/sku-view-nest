@@ -18,6 +18,10 @@ import {
   NotificationModule,
   NotificationService,
   NotificationController,
+  DatesMetaDataModule,
+  DatesMetaDataService,
+  DashboardModule,
+  DashboardController,
 } from './modules';
 
 @Module({
@@ -28,6 +32,8 @@ import {
     AmazonModule,
     GoogleModule,
     NotificationModule,
+    DatesMetaDataModule,
+    DashboardModule,
   ],
   controllers: [
     AppController,
@@ -36,6 +42,7 @@ import {
     AmazonController,
     GoogleController,
     NotificationController,
+    DashboardController,
   ],
   providers: [
     AppService,
@@ -44,6 +51,7 @@ import {
     AmazonService,
     GoogleService,
     NotificationService,
+    DatesMetaDataService,
   ],
 })
 export class AppModule {}

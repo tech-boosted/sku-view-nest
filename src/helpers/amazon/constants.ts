@@ -25,15 +25,6 @@ export const amazon_ads_base_urls: { [key: string]: string } = {
   amazon_it: 'https://advertising-api-eu.amazon.com',
 };
 
-export const amazon_marketplaces = [
-  'amazon_us',
-  'amazon_ca',
-  'amazon_uk',
-  'amazon_ge',
-  'amazon_fr',
-  'amazon_it',
-];
-
 export const amazon_country_code: { [key: string]: string } = {
   amazon_us: 'US',
   amazon_ca: 'CA',

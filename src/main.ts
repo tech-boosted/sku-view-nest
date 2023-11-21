@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { createConnection } from '@typedorm/core';
 import { acrosTable } from './config';
-import { Channel, Notification, Sku, User } from 'src/entity';
+import { Channel, DatesMetaData, Notification, Sku, User } from 'src/entity';
 import 'reflect-metadata';
 import { DocumentClientV3 } from '@typedorm/document-client';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -26,7 +26,7 @@ async function bootstrap() {
 
   createConnection({
     table: acrosTable,
-    entities: [User, Channel, Sku, Notification],
+    entities: [User, Channel, Sku, Notification, DatesMetaData],
     documentClient: documentClient,
   });
   await app.listen(3000);

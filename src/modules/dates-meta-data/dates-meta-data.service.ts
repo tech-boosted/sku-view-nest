@@ -33,6 +33,20 @@ export class DatesMetaDataService {
     );
   }
 
+  async findOne({
+    user_id,
+    channel_name,
+  }: {
+    user_id: string;
+    channel_name: string;
+  }) {
+    const entityManger = getEntityManager();
+    return entityManger.findOne(DatesMetaData, {
+      user_id: user_id,
+      channel_name: channel_name,
+    });
+  }
+
   async exists({
     user_id,
     channel_name,

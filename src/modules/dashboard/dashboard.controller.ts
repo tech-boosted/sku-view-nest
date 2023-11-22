@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { AmazonService } from '../amazon';
-import { AuthUser, ChannelEnum } from 'src/helpers';
+import { AuthUser, ChannelCodeEnum } from 'src/helpers';
 
 @Controller('dashboard')
 export class DashboardController {
@@ -10,7 +10,8 @@ export class DashboardController {
   async fetchSkuDataFromAllChannels(@AuthUser() user_id: string) {
     return this.amazonService.fetchSKUData({
       user_id,
-      channel_name: ChannelEnum.AMAZON_US,
+      channel_name: ChannelCodeEnum.amazon_us,
+      profile_id: '',
     });
   }
 }

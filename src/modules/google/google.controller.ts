@@ -10,7 +10,7 @@ import { GoogleService } from './google.service';
 import { ChannelService } from '../channel';
 import {
   AuthUser,
-  ChannelEnum,
+  CodeToChannelMapEnum,
   NotificationDescriptionEnum,
   NotificationTitleEnum,
   NotificationTypeEnum,
@@ -77,7 +77,7 @@ export class GoogleController {
       description:
         NotificationDescriptionEnum.CHANNEL_CONNECTION_STARTED.replace(
           'X',
-          ChannelEnum.GOOGLE,
+          CodeToChannelMapEnum.google,
         ),
       type: NotificationTypeEnum.CHANNEL_CONNECTION_START,
       read: false,
@@ -122,7 +122,7 @@ export class GoogleController {
           description:
             NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
               'X',
-              ChannelEnum.GOOGLE,
+              CodeToChannelMapEnum.google,
             ) + ' invalid user_id',
           type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
           read: false,
@@ -136,7 +136,7 @@ export class GoogleController {
         description:
           NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
             'X',
-            ChannelEnum.GOOGLE,
+            CodeToChannelMapEnum.google,
           ) + ' token not found',
         type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
         read: false,
@@ -153,7 +153,7 @@ export class GoogleController {
         description:
           NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
             'X',
-            ChannelEnum.GOOGLE,
+            CodeToChannelMapEnum.google,
           ) +
           ' ' +
           error,
@@ -218,7 +218,7 @@ export class GoogleController {
         description:
           NotificationDescriptionEnum.CHANNEL_CONNECTION_SUCCESSFUL.replace(
             'X',
-            ChannelEnum.GOOGLE,
+            CodeToChannelMapEnum.google,
           ),
         type: NotificationTypeEnum.CHANNEL_CONNECTION_SUCCESSFUL,
         read: false,
@@ -233,7 +233,7 @@ export class GoogleController {
       description:
         NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
           'X',
-          ChannelEnum.GOOGLE,
+          CodeToChannelMapEnum.google,
         ),
       type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
       read: false,

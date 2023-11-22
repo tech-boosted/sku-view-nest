@@ -1,6 +1,11 @@
-export enum ChannelEnum {
-  AMAZON_US = 'Amazon US',
-  GOOGLE = 'Google',
+export enum ChannelCodeEnum {
+  amazon_us = 'amazon_us',
+  google = 'google',
+}
+
+export enum CodeToChannelMapEnum {
+  amazon_us = 'AMAZON US',
+  google = 'Google',
 }
 
 export enum NotificationTitleEnum {

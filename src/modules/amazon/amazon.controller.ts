@@ -10,7 +10,8 @@ import {
 } from '@nestjs/common';
 import {
   AuthUser,
-  ChannelEnum,
+  ChannelCodeEnum,
+  CodeToChannelMapEnum,
   NotificationDescriptionEnum,
   NotificationTitleEnum,
   NotificationTypeEnum,
@@ -46,7 +47,7 @@ export class AmazonController {
     headers,
     @Query()
     query: {
-      marketplace: ChannelEnum;
+      marketplace: ChannelCodeEnum;
     },
   ) {
     const token = headers?.authorization?.replace('Bearer ', '');
@@ -103,7 +104,7 @@ export class AmazonController {
       description:
         NotificationDescriptionEnum.CHANNEL_CONNECTION_STARTED.replace(
           'X',
-          ChannelEnum[query.marketplace],
+          CodeToChannelMapEnum[query.marketplace],
         ),
       type: NotificationTypeEnum.CHANNEL_CONNECTION_START,
       read: false,
@@ -138,7 +139,7 @@ export class AmazonController {
           description:
             NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
               'X',
-              ChannelEnum[marketplace],
+              CodeToChannelMapEnum[marketplace],
             ),
           type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
           read: false,
@@ -154,7 +155,7 @@ export class AmazonController {
         description:
           NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
             'X',
-            ChannelEnum[marketplace],
+            CodeToChannelMapEnum[marketplace],
           ),
         type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
         read: false,
@@ -212,7 +213,7 @@ export class AmazonController {
         description:
           NotificationDescriptionEnum.CHANNEL_CONNECTION_SUCCESSFUL.replace(
             'X',
-            ChannelEnum[marketplace],
+            CodeToChannelMapEnum[marketplace],
           ),
         type: NotificationTypeEnum.CHANNEL_CONNECTION_SUCCESSFUL,
         read: false,
@@ -229,7 +230,7 @@ export class AmazonController {
       description:
         NotificationDescriptionEnum.CHANNEL_CONNECTION_FAILED.replace(
           'X',
-          ChannelEnum[marketplace],
+          CodeToChannelMapEnum[marketplace],
         ),
       type: NotificationTypeEnum.CHANNEL_CONNECTION_FAILED,
       read: false,

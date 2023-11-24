@@ -1,5 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { ChannelCodeEnum, generatePast90DaysRanges } from 'src/helpers';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  ChannelCodeEnum,
+  formatDate,
+  generatePast90DaysRanges,
+  getYesterday,
+} from 'src/helpers';
 import { DatesMetaDataService } from '../dates-meta-data';
 
 interface fetchSKUDataProps {
@@ -77,6 +82,8 @@ export class AmazonService {
         start_date: datesArray[0].start_date,
         end_date: datesArray[2].end_date,
       });
+
+      return true;
     } else {
       // Not the first time
       const result = await this.datesMetaDataService.findOne({
@@ -84,16 +91,42 @@ export class AmazonService {
         channel_name: channel_name,
       });
 
-      // const updated_end_date = '';
+      if (!result.end_date) {
+        throw new BadRequestException({
+          message: 'Something went wrong',
+        });
+      }
+
+      const yesterday = formatDate(getYesterday());
+
+      if (formatDate(new Date(result.end_date)) === yesterday) {
+        console.log('already latest data');
+        return true;
+      }
+
+      console.log('db latest date: ', result.end_date);
+      const latestDateObj = new Date(result?.end_date);
+      const currentTimestamp = latestDateObj.getTime();
+      const nextTimestamp = currentTimestamp + 24 * 60 * 60 * 1000;
+      const nextDate = new Date(nextTimestamp);
+      const nextDateString = nextDate.toISOString().slice(0, 10);
+      const updated_latest_date = nextDateString;
+
+      console.log('updated start date: ', updated_latest_date);
 
       await this.fetchSKUDataForDesiredDates({
         user_id: user_id,
         marketplace: channel_name,
         profile_id: profile_id,
-        start_date: result.start_date,
-        end_date: result.end_date,
+        start_date: updated_latest_date,
+        end_date: yesterday,
       });
+
+      await this.datesMetaDataService.update({
+        ...result,
+        end_date: yesterday,
+      });
+      return true;
     }
-    return true;
   };
 }

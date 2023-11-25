@@ -5,6 +5,9 @@ import { ChannelService } from '../channel';
 
 @Controller('dashboard')
 export class DashboardController {
+  AMAZON_CLIENT_ID = process.env.AMAZON_CLIENT_ID;
+  AMAZON_CLIENT_SECRECT = process.env.AMAZON_CLIENT_SECRECT;
+
   constructor(
     private amazonService: AmazonService,
     private channelService: ChannelService,
@@ -12,15 +15,11 @@ export class DashboardController {
 
   @Get('/fetch')
   async fetchSkuDataFromAllChannels(@AuthUser() user_id: string) {
-    const profile = await this.channelService.getOne({
-      user_id,
-      channel_name: ChannelCodeEnum.amazon_us,
-      token_type: 'access_token',
-    });
     return this.amazonService.fetchSKUData({
       user_id,
       channel_name: ChannelCodeEnum.amazon_us,
-      profile_id: profile?.profile_id,
+      AMAZON_CLIENT_ID: this.AMAZON_CLIENT_ID,
+      AMAZON_CLIENT_SECRECT: this.AMAZON_CLIENT_SECRECT,
     });
   }
 }

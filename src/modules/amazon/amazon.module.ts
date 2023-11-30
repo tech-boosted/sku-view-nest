@@ -4,6 +4,7 @@ import { AmazonService } from './amazon.service';
 import { ChannelService } from '../channel';
 import { NotificationService } from '../notification';
 import { DatesMetaDataService } from '../dates-meta-data';
+import { ReportsService } from '../reports';
 
 @Module({
   controllers: [AmazonController],
@@ -12,6 +13,7 @@ import { DatesMetaDataService } from '../dates-meta-data';
     ChannelService,
     NotificationService,
     DatesMetaDataService,
+    ReportsService,
   ],
 })
 export class AmazonModule {}

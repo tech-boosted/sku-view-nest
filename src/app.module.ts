@@ -22,6 +22,8 @@ import {
   DatesMetaDataService,
   DashboardModule,
   DashboardController,
+  ReportsModule,
+  ReportsService,
 } from './modules';
 
 @Module({
@@ -34,6 +36,7 @@ import {
     NotificationModule,
     DatesMetaDataModule,
     DashboardModule,
+    ReportsModule,
   ],
   controllers: [
     AppController,
@@ -52,6 +55,7 @@ import {
     GoogleService,
     NotificationService,
     DatesMetaDataService,
+    ReportsService,
   ],
 })
 export class AppModule {}

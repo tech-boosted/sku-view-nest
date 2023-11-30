@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { amazon_ads_base_urls } from './constants';
+import { ChannelCodeEnum } from '../enums';
 
 interface GenerateReportProps {
   start_date: string;
   end_date: string;
-  marketplace: string;
+  marketplace: ChannelCodeEnum;
   AMAZON_CLIENT_ID: string;
   profile_id: string;
   access_token: string;

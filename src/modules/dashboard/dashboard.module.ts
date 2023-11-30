@@ -4,6 +4,7 @@ import { AmazonService } from '../amazon';
 import { ChannelService } from '../channel';
 import { DatesMetaDataService } from '../dates-meta-data';
 import { GoogleService } from '../google';
+import { ReportsService } from '../reports';
 
 @Module({
   controllers: [DashboardController],
@@ -12,6 +13,7 @@ import { GoogleService } from '../google';
     ChannelService,
     DatesMetaDataService,
     GoogleService,
+    ReportsService,
   ],
 })
 export class DashboardModule {}

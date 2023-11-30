@@ -8,6 +8,12 @@ export enum CodeToChannelMapEnum {
   google = 'Google',
 }
 
+export enum ReportStatusEnum {
+  PENDING = 'Pending',
+  COMPLETED = 'Completed',
+  FALIED = 'Failed',
+}
+
 export enum NotificationTitleEnum {
   CHANNEL_CONNECTION_STARTED = 'Initiated channel connection',
   CHANNEL_CONNECTION_FAILED = 'Connection Failed',

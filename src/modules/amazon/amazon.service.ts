@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   ChannelCodeEnum,
+  ReportStatusEnum,
   formatDate,
   generatePast90DaysRanges,
   getYesterday,
@@ -9,6 +10,7 @@ import {
 import { DatesMetaDataService } from '../dates-meta-data';
 import { generateReport } from 'src/helpers/amazon/generateReport';
 import { ChannelService } from '../channel';
+import { ReportsService } from '../reports';
 
 interface fetchSKUDataProps {
   user_id: string;
@@ -21,7 +23,7 @@ interface fetchSKUDataForDesiredDatesProps {
   user_id: string;
   start_date: string;
   end_date: string;
-  marketplace: string;
+  marketplace: ChannelCodeEnum;
   AMAZON_CLIENT_ID: string;
   AMAZON_CLIENT_SECRECT: string;
 }
@@ -33,6 +35,7 @@ export class AmazonService {
   constructor(
     private channelService: ChannelService,
     private datesMetaDataService: DatesMetaDataService,
+    private reportsService: ReportsService,
   ) {}
 
   proxyCallWithRegerateToken = async ({
@@ -73,11 +76,7 @@ export class AmazonService {
       token_type: 'refresh_token',
     });
 
-    console.log('fetching data for: ');
-    console.log('start_date: ', start_date);
-    console.log('end_date: ', end_date);
-    console.log('marketplace: ', marketplace);
-    console.log('profile_id: ', channel_access_token?.profile_id);
+    console.log('fetching data for: ', start_date, ' - ', end_date);
 
     const download_path_zip = `${this.AMAZON_FILE_DOWNLOAD_PATH}/${user_id}_${start_date}_${end_date}_${marketplace}_${channel_access_token?.profile_id}.json.gz`;
     const download_path_json = `${this.AMAZON_FILE_DOWNLOAD_PATH}/${user_id}_${start_date}_${end_date}_${marketplace}_${channel_access_token?.profile_id}.json`;
@@ -111,6 +110,7 @@ export class AmazonService {
 
       if (regenerateTokenResult?.status) {
         const new_access_token = regenerateTokenResult?.message;
+        console.log('Updating access token in db');
         await this.channelService.update({
           ...channel_access_token,
           token: new_access_token,
@@ -124,7 +124,29 @@ export class AmazonService {
       regenerateToken: regenerateAccessTokenAndUpdate,
     });
 
-    console.log(result);
+    if (!result?.status) {
+      console.log('Create report failed');
+      await this.reportsService.create({
+        user_id,
+        start_date,
+        end_date,
+        report_id: '',
+        channel_name: marketplace,
+        status: ReportStatusEnum.FALIED,
+        extras: result?.message,
+      });
+      return;
+    }
+
+    await this.reportsService.create({
+      user_id,
+      start_date,
+      end_date,
+      report_id: result?.message,
+      channel_name: marketplace,
+      status: ReportStatusEnum.PENDING,
+      extras: '',
+    });
   };
 
   fetchSKUData = async ({

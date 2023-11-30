@@ -6,3 +6,4 @@ export * from './google';
 export * from './notification';
 export * from './dates-meta-data';
 export * from './dashboard';
+export * from './reports';

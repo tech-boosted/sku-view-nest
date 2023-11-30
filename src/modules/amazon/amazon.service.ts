@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   ChannelCodeEnum,
   ReportStatusEnum,
+  checkReportStatus,
   formatDate,
   generatePast90DaysRanges,
   getYesterday,
@@ -48,6 +49,7 @@ export class AmazonService {
     const proxyCallResult = await proxyCall();
 
     if (!proxyCallResult?.status && proxyCallResult?.message === 401) {
+      console.log('proxy call failed due to 401');
       const regenerateTokenResult = await regenerateToken();
       if (regenerateTokenResult?.status) {
         const proxyCallResult2 = await proxyCall();
@@ -119,12 +121,12 @@ export class AmazonService {
       return regenerateTokenResult;
     };
 
-    const result = await this.proxyCallWithRegerateToken({
+    const generateReportResult = await this.proxyCallWithRegerateToken({
       proxyCall: generateReportWithAccessToken,
       regenerateToken: regenerateAccessTokenAndUpdate,
     });
 
-    if (!result?.status) {
+    if (!generateReportResult?.status) {
       console.log('Create report failed');
       await this.reportsService.create({
         user_id,
@@ -133,20 +135,66 @@ export class AmazonService {
         report_id: '',
         channel_name: marketplace,
         status: ReportStatusEnum.FALIED,
-        extras: result?.message,
+        extras: generateReportResult?.message,
       });
-      return;
+      return false;
     }
 
     await this.reportsService.create({
       user_id,
       start_date,
       end_date,
-      report_id: result?.message,
+      report_id: generateReportResult?.message,
       channel_name: marketplace,
       status: ReportStatusEnum.PENDING,
       extras: '',
     });
+
+    const checkReportStatusWithAccessToken = async () => {
+      const latest_channel_access_token = await this.channelService.getOne({
+        user_id,
+        channel_name: ChannelCodeEnum.amazon_us,
+        token_type: 'access_token',
+      });
+      return checkReportStatus({
+        marketplace: marketplace,
+        profile_id: latest_channel_access_token?.profile_id,
+        access_token: latest_channel_access_token?.token,
+        AMAZON_CLIENT_ID: AMAZON_CLIENT_ID,
+        report_id: generateReportResult?.message,
+      });
+    };
+
+    const checkReportStatusResult = await this.proxyCallWithRegerateToken({
+      proxyCall: checkReportStatusWithAccessToken,
+      regenerateToken: regenerateAccessTokenAndUpdate,
+    });
+
+    console.log('checkReportStatusResult: ', checkReportStatusResult);
+    if (!checkReportStatusResult?.status) {
+      await this.reportsService.update({
+        user_id,
+        start_date,
+        end_date,
+        report_id: generateReportResult?.message,
+        channel_name: marketplace,
+        status: ReportStatusEnum.FALIED,
+        extras: checkReportStatusResult?.message,
+      });
+      return false;
+    }
+
+    await this.reportsService.update({
+      user_id,
+      start_date,
+      end_date,
+      report_id: generateReportResult?.message,
+      channel_name: marketplace,
+      status: ReportStatusEnum.COMPLETED,
+      extras: checkReportStatusResult?.message,
+    });
+
+    return true;
   };
 
   fetchSKUData = async ({
@@ -168,7 +216,7 @@ export class AmazonService {
       const datesArray = generatePast90DaysRanges();
 
       datesArray.forEach(async (dateObj) => {
-        await this.fetchSKUDataForDesiredDates({
+        const fetchSKUDataResult = await this.fetchSKUDataForDesiredDates({
           user_id: user_id,
           marketplace: channel_name,
           start_date: dateObj.start_date,
@@ -176,6 +224,9 @@ export class AmazonService {
           AMAZON_CLIENT_ID: AMAZON_CLIENT_ID,
           AMAZON_CLIENT_SECRECT: AMAZON_CLIENT_SECRECT,
         });
+        if (!fetchSKUDataResult) {
+          return false;
+        }
       });
 
       await this.datesMetaDataService.create({
@@ -216,7 +267,7 @@ export class AmazonService {
 
       console.log('updated start date: ', updated_latest_date);
 
-      await this.fetchSKUDataForDesiredDates({
+      const fetchSkuDataResult = await this.fetchSKUDataForDesiredDates({
         user_id: user_id,
         marketplace: channel_name,
         start_date: updated_latest_date,
@@ -224,6 +275,10 @@ export class AmazonService {
         AMAZON_CLIENT_ID: AMAZON_CLIENT_ID,
         AMAZON_CLIENT_SECRECT: AMAZON_CLIENT_SECRECT,
       });
+
+      if (!fetchSkuDataResult) {
+        return false;
+      }
 
       await this.datesMetaDataService.update({
         ...result,

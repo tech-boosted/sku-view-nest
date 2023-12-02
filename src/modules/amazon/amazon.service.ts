@@ -3,6 +3,7 @@ import {
   ChannelCodeEnum,
   ReportStatusEnum,
   checkReportStatus,
+  downloadAndExtractReport,
   formatDate,
   generatePast90DaysRanges,
   getYesterday,
@@ -193,6 +194,14 @@ export class AmazonService {
       status: ReportStatusEnum.COMPLETED,
       extras: checkReportStatusResult?.message,
     });
+
+    const downloadReportResult = await downloadAndExtractReport({
+      fileUrl: checkReportStatusResult?.message,
+      download_path_zip: download_path_zip,
+      download_path_json: download_path_json,
+    });
+
+    console.log('downloadReportResult: ', downloadReportResult);
 
     return true;
   };

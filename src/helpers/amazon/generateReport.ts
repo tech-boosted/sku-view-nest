@@ -77,10 +77,10 @@ export const generateReport = async ({
         };
       } else {
         console.log('Amazon: Failed to create report');
-        // console.log(error?.response);
+        console.log(error?.response?.data);
         return {
           status: false,
-          message: error?.response,
+          message: JSON.stringify(error?.response?.data),
         };
       }
     });

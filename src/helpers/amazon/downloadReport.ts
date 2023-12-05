@@ -1,8 +1,8 @@
-import zlib from 'zlib';
 import axios from 'axios';
 import * as stream from 'stream';
 import { promisify } from 'util';
-import { createReadStream, createWriteStream } from 'fs';
+import zlib from 'zlib';
+import fs from 'fs';
 
 const finished = promisify(stream.finished);
 
@@ -17,7 +17,7 @@ export const downloadAndExtractReport = async ({
   download_path_zip,
   download_path_json,
 }: downloadAndExtractReportProps) => {
-  const writer = createWriteStream(download_path_zip);
+  const writer = fs.createWriteStream(download_path_zip);
   let result: any = {};
   result = await axios({
     method: 'get',
@@ -28,24 +28,28 @@ export const downloadAndExtractReport = async ({
       response.data.pipe(writer);
       await finished(writer).then(() => {
         console.log('Download completed');
-        const gunzip = zlib.createGunzip();
-        const rstream = createReadStream(download_path_zip);
-        const wstream = createWriteStream(download_path_json);
-        rstream.pipe(gunzip).pipe(wstream);
-        console.log('writing');
-        wstream.on('finish', async () => {
-          console.log('Completed writing');
-          return {
-            status: true,
-            message: 'File downloaded and extracted',
-          };
-        });
+        try {
+          const gunzip = zlib.createGunzip();
+          const rstream = fs.createReadStream(download_path_zip);
+          const wstream = fs.createWriteStream(download_path_json);
+          rstream.pipe(gunzip).pipe(wstream);
+          console.log('writing');
+          wstream.on('finish', async () => {
+            console.log('Completed writing');
+            return {
+              status: true,
+              message: 'File downloaded and extracted',
+            };
+          });
+        } catch (err) {
+          console.log(err);
+        }
       });
     })
     .catch((err) => {
       return {
         status: false,
-        message: 'Download failed: ' + err?.data,
+        message: 'Download failed: ' + err,
       };
     });
   return result;

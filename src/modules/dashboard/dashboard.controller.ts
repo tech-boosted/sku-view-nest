@@ -15,11 +15,12 @@ export class DashboardController {
 
   @Get('/fetch')
   async fetchSkuDataFromAllChannels(@AuthUser() user_id: string) {
-    return this.amazonService.fetchSKUData({
+    this.amazonService.fetchSKUData({
       user_id,
       channel_name: ChannelCodeEnum.amazon_us,
       AMAZON_CLIENT_ID: this.AMAZON_CLIENT_ID,
       AMAZON_CLIENT_SECRECT: this.AMAZON_CLIENT_SECRECT,
     });
+    return true;
   }
 }

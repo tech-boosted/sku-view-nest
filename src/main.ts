@@ -37,6 +37,6 @@ async function bootstrap() {
     entities: [User, Channel, Sku, Notification, DatesMetaData, Reports],
     documentClient: documentClient,
   });
-  await app.listen(3000);
+  await app.listen(3001);
 }
 bootstrap();

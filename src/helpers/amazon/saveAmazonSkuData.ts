@@ -85,9 +85,8 @@ export const saveAmazonSkuData = async (
 
   if (promises.length > 0) {
     console.log('\nawaiting write to DynamoDB\n');
-    await Promise.all(promises).then((res) => {
-      // console.log('res: ', res);
-      return res;
+    await Promise.all(promises).then(() => {
+      console.log('all promises completed');
     });
   }
 

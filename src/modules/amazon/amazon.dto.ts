@@ -10,7 +10,7 @@ export class AmazonSetProfileDTO {
 export class AmazonSaveDTO {
   user_id: string;
   channel_name: string;
-  sku_data: AmazonJSONFile[];
+  s3_item_path: string;
 }
 
 export interface AmazonJSONFile {

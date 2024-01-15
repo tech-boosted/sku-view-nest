@@ -24,8 +24,13 @@ import {
 } from 'src/helpers';
 import { AmazonService } from './amazon.service';
 import { ChannelService } from '../channel';
-import { AmazonSaveDTO, AmazonSetProfileDTO } from './amazon.dto';
+import {
+  AmazonJSONFile,
+  AmazonSaveDTO,
+  AmazonSetProfileDTO,
+} from './amazon.dto';
 import { NotificationService } from '../notification';
+import { S3 } from 'aws-sdk';
 
 @Controller('amazon')
 export class AmazonController {
@@ -34,6 +39,7 @@ export class AmazonController {
   AMAZON_CLIENT_SECRECT = process.env.AMAZON_CLIENT_SECRECT;
   CLIENT_AMAZON_SUCCESS_URL = process.env.CLIENT_AMAZON_SUCCESS_URL;
   CLIENT_AMAZON_FAIL_URL = process.env.CLIENT_AMAZON_FAIL_URL;
+  S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
   constructor(
     private amazonService: AmazonService,
@@ -375,20 +381,40 @@ export class AmazonController {
 
   @Post('/save')
   async save(@Body() requestBody: AmazonSaveDTO) {
+    const s3 = new S3();
     if (
-      !requestBody?.sku_data?.length ||
       !requestBody?.user_id?.length ||
-      !requestBody?.channel_name?.length
+      !requestBody?.channel_name?.length ||
+      !requestBody?.s3_item_path?.length
     ) {
       throw new BadRequestException({
         status: false,
         message: 'Missing parameters',
       });
     }
-    return saveAmazonSkuData(
-      requestBody?.sku_data,
-      requestBody?.user_id,
-      requestBody?.channel_name,
-    );
+
+    console.log('requestBody: ', requestBody);
+
+    const getParams = {
+      Bucket: this.S3_BUCKET_NAME,
+      Key: requestBody?.s3_item_path,
+    };
+
+    s3.getObject(getParams, async (err, data) => {
+      // Handle any error and exit
+      if (err) {
+        return err;
+      }
+
+      // Convert Body from a Buffer to a String
+      const dataString = data.Body.toString('utf-8'); // Use the encoding necessary
+      const objectData: AmazonJSONFile[] = JSON.parse(dataString);
+      await saveAmazonSkuData(
+        objectData,
+        requestBody?.user_id,
+        requestBody?.channel_name,
+      );
+    });
+    return true;
   }
 }

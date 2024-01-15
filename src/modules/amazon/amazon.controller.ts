@@ -19,11 +19,12 @@ import {
   getProfilesFromAmazon,
   getTokensFromAmazon,
   regenerateToken,
+  saveAmazonSkuData,
   validateToken,
 } from 'src/helpers';
 import { AmazonService } from './amazon.service';
 import { ChannelService } from '../channel';
-import { AmazonSetProfileDTO } from './amazon.dto';
+import { AmazonSaveDTO, AmazonSetProfileDTO } from './amazon.dto';
 import { NotificationService } from '../notification';
 
 @Controller('amazon')
@@ -370,5 +371,24 @@ export class AmazonController {
         message: err,
       });
     }
+  }
+
+  @Post('/save')
+  async save(@Body() requestBody: AmazonSaveDTO) {
+    if (
+      !requestBody?.sku_data?.length ||
+      !requestBody?.user_id?.length ||
+      !requestBody?.channel_name?.length
+    ) {
+      throw new BadRequestException({
+        status: false,
+        message: 'Missing parameters',
+      });
+    }
+    return saveAmazonSkuData(
+      requestBody?.sku_data,
+      requestBody?.user_id,
+      requestBody?.channel_name,
+    );
   }
 }

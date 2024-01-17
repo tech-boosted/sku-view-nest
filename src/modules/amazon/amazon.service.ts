@@ -13,6 +13,7 @@ import { DatesMetaDataService } from '../dates-meta-data';
 import { generateReport } from 'src/helpers/amazon/generateReport';
 import { ChannelService } from '../channel';
 import { ReportsService } from '../reports';
+import { Reports } from 'src/entity';
 
 interface fetchSKUDataProps {
   user_id: string;
@@ -141,7 +142,7 @@ export class AmazonService {
       return false;
     }
 
-    await this.reportsService.create({
+    const created_report_info: Reports = await this.reportsService.create({
       user_id,
       start_date,
       end_date,

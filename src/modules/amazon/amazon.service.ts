@@ -3,6 +3,7 @@ import {
   ChannelCodeEnum,
   ReportStatusEnum,
   checkReportStatus,
+  createSQSEvent,
   downloadAndExtractReport,
   formatDate,
   generatePast90DaysRanges,
@@ -20,6 +21,8 @@ interface fetchSKUDataProps {
   channel_name: ChannelCodeEnum;
   AMAZON_CLIENT_ID: string;
   AMAZON_CLIENT_SECRECT: string;
+  SQS_QUEUE_URL: string;
+  S3_BUCKET_NAME: string;
 }
 
 interface fetchSKUDataForDesiredDatesProps {
@@ -29,6 +32,8 @@ interface fetchSKUDataForDesiredDatesProps {
   marketplace: ChannelCodeEnum;
   AMAZON_CLIENT_ID: string;
   AMAZON_CLIENT_SECRECT: string;
+  SQS_QUEUE_URL: string;
+  S3_BUCKET_NAME: string;
 }
 
 @Injectable()
@@ -68,7 +73,12 @@ export class AmazonService {
     marketplace,
     AMAZON_CLIENT_ID,
     AMAZON_CLIENT_SECRECT,
+    SQS_QUEUE_URL,
+    S3_BUCKET_NAME,
   }: fetchSKUDataForDesiredDatesProps) => {
+    start_date = '2024-01-03';
+    end_date = '2024-01-03';
+
     const channel_access_token = await this.channelService.getOne({
       user_id,
       channel_name: ChannelCodeEnum.amazon_us,
@@ -81,12 +91,6 @@ export class AmazonService {
     });
 
     console.log('fetching data for: ', start_date, ' - ', end_date);
-
-    const download_path_zip = `${this.AMAZON_FILE_DOWNLOAD_PATH}/${user_id}_${start_date}_${end_date}_${marketplace}_${channel_access_token?.profile_id}.json.gz`;
-    const download_path_json = `${this.AMAZON_FILE_DOWNLOAD_PATH}/${user_id}_${start_date}_${end_date}_${marketplace}_${channel_access_token?.profile_id}.json`;
-
-    console.log(download_path_zip);
-    console.log(download_path_json);
 
     const generateReportWithAccessToken = async () => {
       const latest_channel_access_token = await this.channelService.getOne({
@@ -142,7 +146,7 @@ export class AmazonService {
       return false;
     }
 
-    const created_report_info: Reports = await this.reportsService.create({
+    const created_report_info = await this.reportsService.create({
       user_id,
       start_date,
       end_date,
@@ -152,59 +156,40 @@ export class AmazonService {
       extras: '',
     });
 
-    const checkReportStatusWithAccessToken = async () => {
-      const latest_channel_access_token = await this.channelService.getOne({
-        user_id,
-        channel_name: ChannelCodeEnum.amazon_us,
-        token_type: 'access_token',
-      });
-      return checkReportStatus({
-        marketplace: marketplace,
-        profile_id: latest_channel_access_token?.profile_id,
-        access_token: latest_channel_access_token?.token,
-        AMAZON_CLIENT_ID: AMAZON_CLIENT_ID,
-        report_id: generateReportResult?.message,
-      });
+    console.log('created_report_info: ', created_report_info);
+
+    const latest_channel_access_token = await this.channelService.getOne({
+      user_id,
+      channel_name: ChannelCodeEnum.amazon_us,
+      token_type: 'access_token',
+    });
+
+    const sqs_body = {
+      marketplace: marketplace,
+      profile_id: channel_refresh_token?.profile_id,
+      access_token: latest_channel_access_token?.token,
+      refresh_token: channel_refresh_token?.token,
+      report_id: generateReportResult?.message,
+      AMAZON_CLIENT_ID: AMAZON_CLIENT_ID,
+      AMAZON_CLIENT_SECRECT: AMAZON_CLIENT_SECRECT,
+      s3_bucket: S3_BUCKET_NAME,
+      start_date: start_date,
+      end_date: end_date,
+      client_base_url: 'http://localhost:3001',
+      channel_info: latest_channel_access_token,
+      report_info: created_report_info,
     };
 
-    const checkReportStatusResult = await this.proxyCallWithRegerateToken({
-      proxyCall: checkReportStatusWithAccessToken,
-      regenerateToken: regenerateAccessTokenAndUpdate,
-    });
+    console.log('sqs_body: ', sqs_body);
+    console.log('SQS_QUEUE_URL: ', SQS_QUEUE_URL);
 
-    console.log('checkReportStatusResult: ', checkReportStatusResult);
-    if (!checkReportStatusResult?.status) {
-      await this.reportsService.update({
-        user_id,
-        start_date,
-        end_date,
-        report_id: generateReportResult?.message,
-        channel_name: marketplace,
-        status: ReportStatusEnum.FALIED,
-        extras: checkReportStatusResult?.message,
-      });
-      return false;
-    }
+    // await createSQSEvent({
+    //   sqs_queue_url: SQS_QUEUE_URL,
+    //   sqs_body: sqs_body,
+    // });
 
-    await this.reportsService.update({
-      user_id,
-      start_date,
-      end_date,
-      report_id: generateReportResult?.message,
-      channel_name: marketplace,
-      status: ReportStatusEnum.COMPLETED,
-      extras: checkReportStatusResult?.message,
-    });
-
-    const downloadReportResult = await downloadAndExtractReport({
-      fileUrl: checkReportStatusResult?.message,
-      download_path_zip: download_path_zip,
-      download_path_json: download_path_json,
-    });
-
-    console.log('downloadReportResult: ', downloadReportResult);
-
-    return true;
+    // return true;
+    return false;
   };
 
   fetchSKUData = async ({
@@ -212,6 +197,8 @@ export class AmazonService {
     channel_name,
     AMAZON_CLIENT_ID,
     AMAZON_CLIENT_SECRECT,
+    SQS_QUEUE_URL,
+    S3_BUCKET_NAME,
   }: fetchSKUDataProps) => {
     console.log('user_id: ', user_id);
     console.log('channel_name: ', channel_name);
@@ -233,6 +220,8 @@ export class AmazonService {
           end_date: dateObj.end_date,
           AMAZON_CLIENT_ID: AMAZON_CLIENT_ID,
           AMAZON_CLIENT_SECRECT: AMAZON_CLIENT_SECRECT,
+          SQS_QUEUE_URL,
+          S3_BUCKET_NAME,
         });
         if (!fetchSKUDataResult) {
           return false;
@@ -284,6 +273,8 @@ export class AmazonService {
         end_date: yesterday,
         AMAZON_CLIENT_ID: AMAZON_CLIENT_ID,
         AMAZON_CLIENT_SECRECT: AMAZON_CLIENT_SECRECT,
+        SQS_QUEUE_URL,
+        S3_BUCKET_NAME,
       });
 
       if (!fetchSkuDataResult) {

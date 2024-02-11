@@ -14,7 +14,6 @@ import { DatesMetaDataService } from '../dates-meta-data';
 import { generateReport } from 'src/helpers/amazon/generateReport';
 import { ChannelService } from '../channel';
 import { ReportsService } from '../reports';
-import { Reports } from 'src/entity';
 
 interface fetchSKUDataProps {
   user_id: string;
@@ -38,8 +37,6 @@ interface fetchSKUDataForDesiredDatesProps {
 
 @Injectable()
 export class AmazonService {
-  AMAZON_FILE_DOWNLOAD_PATH = process.env.AMAZON_FILE_DOWNLOAD_PATH;
-
   constructor(
     private channelService: ChannelService,
     private datesMetaDataService: DatesMetaDataService,
@@ -76,8 +73,6 @@ export class AmazonService {
     SQS_QUEUE_URL,
     S3_BUCKET_NAME,
   }: fetchSKUDataForDesiredDatesProps) => {
-    start_date = '2024-01-03';
-    end_date = '2024-01-03';
 
     const channel_access_token = await this.channelService.getOne({
       user_id,
@@ -146,7 +141,7 @@ export class AmazonService {
       return false;
     }
 
-    const created_report_info = await this.reportsService.create({
+    const created_report_info: any = await this.reportsService.create({
       user_id,
       start_date,
       end_date,
@@ -177,19 +172,22 @@ export class AmazonService {
       end_date: end_date,
       client_base_url: 'http://localhost:3001',
       channel_info: latest_channel_access_token,
-      report_info: created_report_info,
+      report_info: {
+        ...created_report_info,
+        PK: 'REPORTS#' + user_id,
+        SK: marketplace + '#' + generateReportResult?.message,
+      },
     };
 
     console.log('sqs_body: ', sqs_body);
     console.log('SQS_QUEUE_URL: ', SQS_QUEUE_URL);
 
-    // await createSQSEvent({
-    //   sqs_queue_url: SQS_QUEUE_URL,
-    //   sqs_body: sqs_body,
-    // });
+    const sqs_response = await createSQSEvent({
+      sqs_queue_url: SQS_QUEUE_URL,
+      sqs_body: sqs_body,
+    });
 
-    // return true;
-    return false;
+    return true;
   };
 
   fetchSKUData = async ({

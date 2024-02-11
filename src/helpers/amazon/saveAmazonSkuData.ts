@@ -11,9 +11,11 @@ const saveToDynamoDB = async (items: Sku[]) => {
     batchToWrite.addCreateItem(item);
   });
 
-  await getBatchManager().write(batchToWrite, {
-    requestsConcurrencyLimit: 10,
-  });
+  console.log('batchToWrite: ', batchToWrite);
+
+  // await getBatchManager().write(batchToWrite, {
+  //   requestsConcurrencyLimit: 10,
+  // });
 };
 
 export const saveAmazonSkuData = async (

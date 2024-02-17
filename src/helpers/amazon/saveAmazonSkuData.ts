@@ -13,9 +13,9 @@ const saveToDynamoDB = async (items: Sku[]) => {
 
   console.log('batchToWrite: ', batchToWrite);
 
-  // await getBatchManager().write(batchToWrite, {
-  //   requestsConcurrencyLimit: 10,
-  // });
+  await getBatchManager().write(batchToWrite, {
+    requestsConcurrencyLimit: 10,
+  });
 };
 
 export const saveAmazonSkuData = async (

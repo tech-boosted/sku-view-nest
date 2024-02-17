@@ -9,6 +9,7 @@ export class DashboardController {
   AMAZON_CLIENT_SECRECT = process.env.AMAZON_CLIENT_SECRECT;
   SQS_QUEUE_URL = process.env.SQS_QUEUE_URL;
   S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
+  ENVIRONMENT = process.env.ENV;
 
   constructor(
     private amazonService: AmazonService,
@@ -24,6 +25,7 @@ export class DashboardController {
       AMAZON_CLIENT_SECRECT: this.AMAZON_CLIENT_SECRECT,
       SQS_QUEUE_URL: this.SQS_QUEUE_URL,
       S3_BUCKET_NAME: this.S3_BUCKET_NAME,
+      ENVIRONMENT: this.ENVIRONMENT,
     });
     return true;
   }

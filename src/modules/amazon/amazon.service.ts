@@ -1,19 +1,19 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import {
-  ChannelCodeEnum,
-  ReportStatusEnum,
-  checkReportStatus,
-  createSQSEvent,
-  downloadAndExtractReport,
-  formatDate,
-  generatePast90DaysRanges,
-  getYesterday,
-  regenerateToken,
-} from 'src/helpers';
 import { DatesMetaDataService } from '../dates-meta-data';
 import { generateReport } from 'src/helpers/amazon/generateReport';
 import { ChannelService } from '../channel';
 import { ReportsService } from '../reports';
+import axios from 'axios';
+import {
+  ChannelCodeEnum,
+  ReportStatusEnum,
+  createSQSEvent,
+  formatDate,
+  generatePast90DaysRanges,
+  getYesterday,
+  regenerateToken,
+  splitRangeTo30DaysParts,
+} from 'src/helpers';
 
 interface fetchSKUDataProps {
   user_id: string;
@@ -22,6 +22,7 @@ interface fetchSKUDataProps {
   AMAZON_CLIENT_SECRECT: string;
   SQS_QUEUE_URL: string;
   S3_BUCKET_NAME: string;
+  ENVIRONMENT: string;
 }
 
 interface fetchSKUDataForDesiredDatesProps {
@@ -33,6 +34,7 @@ interface fetchSKUDataForDesiredDatesProps {
   AMAZON_CLIENT_SECRECT: string;
   SQS_QUEUE_URL: string;
   S3_BUCKET_NAME: string;
+  ENVIRONMENT: string;
 }
 
 @Injectable()
@@ -72,8 +74,8 @@ export class AmazonService {
     AMAZON_CLIENT_SECRECT,
     SQS_QUEUE_URL,
     S3_BUCKET_NAME,
+    ENVIRONMENT,
   }: fetchSKUDataForDesiredDatesProps) => {
-
     const channel_access_token = await this.channelService.getOne({
       user_id,
       channel_name: ChannelCodeEnum.amazon_us,
@@ -133,7 +135,7 @@ export class AmazonService {
         user_id,
         start_date,
         end_date,
-        report_id: '',
+        report_id: `FAILED_${start_date}_${end_date}_${new Date()?.toISOString()}`,
         channel_name: marketplace,
         status: ReportStatusEnum.FALIED,
         extras: generateReportResult?.message,
@@ -182,10 +184,31 @@ export class AmazonService {
     console.log('sqs_body: ', sqs_body);
     console.log('SQS_QUEUE_URL: ', SQS_QUEUE_URL);
 
-    const sqs_response = await createSQSEvent({
-      sqs_queue_url: SQS_QUEUE_URL,
-      sqs_body: sqs_body,
-    });
+    if (ENVIRONMENT === 'dev') {
+      let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'http://localhost:3000/dev/amazonPoll',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: sqs_body,
+      };
+
+      await axios
+        .request(config)
+        .then((response) => {
+          console.log(JSON.stringify(response.data));
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    } else {
+      const sqs_response = await createSQSEvent({
+        sqs_queue_url: SQS_QUEUE_URL,
+        sqs_body: sqs_body,
+      });
+    }
 
     return true;
   };
@@ -197,6 +220,7 @@ export class AmazonService {
     AMAZON_CLIENT_SECRECT,
     SQS_QUEUE_URL,
     S3_BUCKET_NAME,
+    ENVIRONMENT,
   }: fetchSKUDataProps) => {
     console.log('user_id: ', user_id);
     console.log('channel_name: ', channel_name);
@@ -210,8 +234,10 @@ export class AmazonService {
       // First time fetch after connecting channel
       const datesArray = generatePast90DaysRanges();
 
+      let fetchSkuDataResult = true;
+
       datesArray.forEach(async (dateObj) => {
-        const fetchSKUDataResult = await this.fetchSKUDataForDesiredDates({
+        let temp = await this.fetchSKUDataForDesiredDates({
           user_id: user_id,
           marketplace: channel_name,
           start_date: dateObj.start_date,
@@ -220,9 +246,10 @@ export class AmazonService {
           AMAZON_CLIENT_SECRECT: AMAZON_CLIENT_SECRECT,
           SQS_QUEUE_URL,
           S3_BUCKET_NAME,
+          ENVIRONMENT,
         });
-        if (!fetchSKUDataResult) {
-          return false;
+        if (!temp) {
+          fetchSkuDataResult = false;
         }
       });
 
@@ -264,15 +291,30 @@ export class AmazonService {
 
       console.log('updated start date: ', updated_latest_date);
 
-      const fetchSkuDataResult = await this.fetchSKUDataForDesiredDates({
-        user_id: user_id,
-        marketplace: channel_name,
+      const datesSplitBy30Days = splitRangeTo30DaysParts({
         start_date: updated_latest_date,
         end_date: yesterday,
-        AMAZON_CLIENT_ID: AMAZON_CLIENT_ID,
-        AMAZON_CLIENT_SECRECT: AMAZON_CLIENT_SECRECT,
-        SQS_QUEUE_URL,
-        S3_BUCKET_NAME,
+      });
+
+      console.log('datesSplitBy30Days: ', datesSplitBy30Days);
+
+      let fetchSkuDataResult = true;
+
+      datesSplitBy30Days?.forEach(async (dateRange) => {
+        const temp = await this.fetchSKUDataForDesiredDates({
+          user_id: user_id,
+          marketplace: channel_name,
+          start_date: dateRange?.start,
+          end_date: dateRange?.end,
+          AMAZON_CLIENT_ID: AMAZON_CLIENT_ID,
+          AMAZON_CLIENT_SECRECT: AMAZON_CLIENT_SECRECT,
+          SQS_QUEUE_URL,
+          S3_BUCKET_NAME,
+          ENVIRONMENT,
+        });
+        if (!temp) {
+          fetchSkuDataResult = false;
+        }
       });
 
       if (!fetchSkuDataResult) {

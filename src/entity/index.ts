@@ -4,3 +4,4 @@ export * from './sku.entity';
 export * from './notification.entity';
 export * from './dates.metadata.entity';
 export * from './reports.entity';
+export * from './catalog.entity';

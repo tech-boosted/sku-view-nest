@@ -18,6 +18,18 @@ export class DashboardController {
 
   @Get('/fetch')
   async fetchSkuDataFromAllChannels(@AuthUser() user_id: string) {
+    const connectedChannels = await this.channelService
+      .getAll({ user_id })
+      ?.then((res) => res?.items);
+
+    console.log('connectedChannels: ', connectedChannels);
+
+    if (connectedChannels?.length === 0) {
+      return {
+        message: 'No channels linked',
+      };
+    }
+
     await this.amazonService.fetchSKUData({
       user_id,
       channel_name: ChannelCodeEnum.amazon_us,

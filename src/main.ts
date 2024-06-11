@@ -16,6 +16,7 @@ import {
   Reports,
   Sku,
   User,
+  Catalog,
 } from 'src/entity';
 
 dotenv.config();
@@ -29,12 +30,20 @@ const documentClient = new DocumentClientV3(
 );
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: true });
   app.useGlobalPipes(new ValidationPipe());
 
   createConnection({
     table: acrosTable,
-    entities: [User, Channel, Sku, Notification, DatesMetaData, Reports],
+    entities: [
+      User,
+      Channel,
+      Sku,
+      Notification,
+      DatesMetaData,
+      Reports,
+      Catalog,
+    ],
     documentClient: documentClient,
   });
   await app.listen(3001);

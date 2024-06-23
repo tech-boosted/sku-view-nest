@@ -30,15 +30,41 @@ export class DashboardController {
       };
     }
 
-    await this.amazonService.fetchSKUData({
-      user_id,
-      channel_name: ChannelCodeEnum.amazon_us,
-      AMAZON_CLIENT_ID: this.AMAZON_CLIENT_ID,
-      AMAZON_CLIENT_SECRECT: this.AMAZON_CLIENT_SECRECT,
-      SQS_QUEUE_URL: this.SQS_QUEUE_URL,
-      S3_BUCKET_NAME: this.S3_BUCKET_NAME,
-      ENVIRONMENT: this.ENVIRONMENT,
+    const allChannels = [
+      ...new Set(connectedChannels?.map((channel) => channel?.channel_name)),
+    ];
+
+    console.log(allChannels);
+
+    allChannels?.forEach(async (channel_name) => {
+      await this.amazonService.fetchSKUData({
+        user_id,
+        channel_name: ChannelCodeEnum[channel_name],
+        AMAZON_CLIENT_ID: this.AMAZON_CLIENT_ID,
+        AMAZON_CLIENT_SECRECT: this.AMAZON_CLIENT_SECRECT,
+        SQS_QUEUE_URL: this.SQS_QUEUE_URL,
+        S3_BUCKET_NAME: this.S3_BUCKET_NAME,
+        ENVIRONMENT: this.ENVIRONMENT,
+      });
     });
+
+    return true;
+  }
+
+  @Get('/summary')
+  async fetchDashboardSummary(@AuthUser() user_id: string) {
+    console.log('user_id: ', user_id);
+    const connectedChannels = await this.channelService
+      .getAll({ user_id })
+      ?.then((res) => res?.items);
+
+    console.log('connectedChannels: ', connectedChannels);
+
+    if (connectedChannels?.length === 0) {
+      return {
+        message: 'No channels linked',
+      };
+    }
     return true;
   }
 }

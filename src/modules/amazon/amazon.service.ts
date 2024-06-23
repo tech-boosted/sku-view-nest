@@ -78,12 +78,12 @@ export class AmazonService {
   }: fetchSKUDataForDesiredDatesProps) => {
     const channel_access_token = await this.channelService.getOne({
       user_id,
-      channel_name: ChannelCodeEnum.amazon_us,
+      channel_name: marketplace,
       token_type: 'access_token',
     });
     const channel_refresh_token = await this.channelService.getOne({
       user_id,
-      channel_name: ChannelCodeEnum.amazon_us,
+      channel_name: marketplace,
       token_type: 'refresh_token',
     });
 
@@ -92,7 +92,7 @@ export class AmazonService {
     const generateReportWithAccessToken = async () => {
       const latest_channel_access_token = await this.channelService.getOne({
         user_id,
-        channel_name: ChannelCodeEnum.amazon_us,
+        channel_name: marketplace,
         token_type: 'access_token',
       });
       return generateReport({
@@ -157,7 +157,7 @@ export class AmazonService {
 
     const latest_channel_access_token = await this.channelService.getOne({
       user_id,
-      channel_name: ChannelCodeEnum.amazon_us,
+      channel_name: marketplace,
       token_type: 'access_token',
     });
 
@@ -184,7 +184,7 @@ export class AmazonService {
     console.log('sqs_body: ', sqs_body);
     console.log('SQS_QUEUE_URL: ', SQS_QUEUE_URL);
 
-    if (ENVIRONMENT === 'dev') {
+    if (ENVIRONMENT === 'dev' && false) {
       let config = {
         method: 'post',
         maxBodyLength: Infinity,
@@ -198,10 +198,10 @@ export class AmazonService {
       await axios
         .request(config)
         .then((response) => {
-          console.log(JSON.stringify(response.data));
+          console.log('amazonPoll response: ', JSON.stringify(response.data));
         })
         .catch((error) => {
-          console.log(error);
+          console.log("amazonPoll response error: ", error);
         });
     } else {
       const sqs_response = await createSQSEvent({

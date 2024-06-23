@@ -1,10 +1,12 @@
 export enum ChannelCodeEnum {
   amazon_us = 'amazon_us',
+  amazon_in = 'amazon_in',
   google = 'google',
 }
 
 export enum CodeToChannelMapEnum {
   amazon_us = 'AMAZON US',
+  amazon_in = 'AMAZON IN',
   google = 'Google',
 }
 
